@@ -60,7 +60,6 @@ public class MainActivity extends AppCompatActivity {
         floatingActionButtonOnOff.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if (isConnectedInWifi()) {
                     if (!isStarted && startAndroidWebServer()) {
                         isStarted = true;
                         textViewMessage.setVisibility(View.VISIBLE);
@@ -72,9 +71,7 @@ public class MainActivity extends AppCompatActivity {
                         floatingActionButtonOnOff.setBackgroundTintList(ContextCompat.getColorStateList(MainActivity.this, R.color.colorRed));
                         editTextPort.setEnabled(true);
                     }
-                } else {
-                    Snackbar.make(coordinatorLayout, getString(R.string.wifi_message), Snackbar.LENGTH_LONG).show();
-                }
+
             }
         });
 
@@ -112,8 +109,8 @@ public class MainActivity extends AppCompatActivity {
 
     //region Private utils Method
     private void setIpAccess() {
-        textViewIpAccess.setText(getIpAccess());
-      //textViewIpAccess.setText(getIpAddress());
+        //textViewIpAccess.setText(getIpAccess());
+      textViewIpAccess.setText(getIpAddress());
     }
 
     private void initBroadcastReceiverNetworkStateChanged() {
@@ -182,7 +179,9 @@ public class MainActivity extends AppCompatActivity {
             unregisterReceiver(broadcastReceiverNetworkState);
         }
     }
-
+/* This method used to get the ip of the wireless access point i.e. wifi hotspot.
+  You need to keep your wifi hotspot turned on.
+  */
   private String getIpAddress() {
     String ip = "";
     try {
