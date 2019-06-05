@@ -19,6 +19,11 @@ import android.view.KeyEvent;
 import android.view.View;
 import android.widget.EditText;
 import android.widget.TextView;
+import android.widget.Toast;
+import java.net.InetAddress;
+import java.net.NetworkInterface;
+import java.net.SocketException;
+import java.util.Enumeration;
 
 /**
  * Created by Mikhael LOPEZ on 14/12/2015.
@@ -50,6 +55,7 @@ public class MainActivity extends AppCompatActivity {
         textViewMessage = findViewById(R.id.textViewMessage);
         textViewIpAccess = (TextView) findViewById(R.id.textViewIpAccess);
         setIpAccess();
+      //Toast.makeText(this,getIpAddress(),Toast.LENGTH_LONG).show();
         floatingActionButtonOnOff = (FloatingActionButton) findViewById(R.id.floatingActionButtonOnOff);
         floatingActionButtonOnOff.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -107,6 +113,7 @@ public class MainActivity extends AppCompatActivity {
     //region Private utils Method
     private void setIpAccess() {
         textViewIpAccess.setText(getIpAccess());
+      //textViewIpAccess.setText(getIpAddress());
     }
 
     private void initBroadcastReceiverNetworkStateChanged() {
@@ -175,5 +182,33 @@ public class MainActivity extends AppCompatActivity {
             unregisterReceiver(broadcastReceiverNetworkState);
         }
     }
+
+  private String getIpAddress() {
+    String ip = "";
+    try {
+      Enumeration<NetworkInterface> enumNetworkInterfaces = NetworkInterface
+          .getNetworkInterfaces();
+      while (enumNetworkInterfaces.hasMoreElements()) {
+        NetworkInterface networkInterface = enumNetworkInterfaces
+            .nextElement();
+        Enumeration<InetAddress> enumInetAddress = networkInterface
+            .getInetAddresses();
+        while (enumInetAddress.hasMoreElements()) {
+          InetAddress inetAddress = enumInetAddress.nextElement();
+
+          if (inetAddress.isSiteLocalAddress()) {
+            ip += inetAddress.getHostAddress() + "\n";
+          }
+        }
+      }
+
+    } catch (SocketException e) {
+      // TODO Auto-generated catch block
+      e.printStackTrace();
+      ip += "Something Wrong! " + e.toString() + "\n";
+    }
+    return "http://" + ip + ":";
+
+  }
 
 }
