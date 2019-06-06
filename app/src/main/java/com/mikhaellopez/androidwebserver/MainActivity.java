@@ -60,7 +60,7 @@ public class MainActivity extends AppCompatActivity {
         floatingActionButtonOnOff.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if (isConnectedInWifi()) {
+                //if (isConnectedInWifi()) {
                     if (!isStarted && startAndroidWebServer()) {
                         isStarted = true;
                         textViewMessage.setVisibility(View.VISIBLE);
@@ -72,9 +72,10 @@ public class MainActivity extends AppCompatActivity {
                         floatingActionButtonOnOff.setBackgroundTintList(ContextCompat.getColorStateList(MainActivity.this, R.color.colorRed));
                         editTextPort.setEnabled(true);
                     }
-                } else {
-                    Snackbar.make(coordinatorLayout, getString(R.string.wifi_message), Snackbar.LENGTH_LONG).show();
-                }
+                //}
+                //else {
+                //    Snackbar.make(coordinatorLayout, getString(R.string.wifi_message), Snackbar.LENGTH_LONG).show();
+                //}
             }
         });
 
@@ -90,7 +91,7 @@ public class MainActivity extends AppCompatActivity {
                 if (port == 0) {
                     throw new Exception();
                 }
-                androidWebServer = new AndroidWebServer(port);
+                androidWebServer = new AndroidWebServer(port,this);
                 androidWebServer.start();
                 return true;
             } catch (Exception e) {
@@ -112,8 +113,8 @@ public class MainActivity extends AppCompatActivity {
 
     //region Private utils Method
     private void setIpAccess() {
-        textViewIpAccess.setText(getIpAccess());
-      //textViewIpAccess.setText(getIpAddress());
+        //textViewIpAccess.setText(getIpAccess());
+      textViewIpAccess.setText(getIpAddress());
     }
 
     private void initBroadcastReceiverNetworkStateChanged() {
