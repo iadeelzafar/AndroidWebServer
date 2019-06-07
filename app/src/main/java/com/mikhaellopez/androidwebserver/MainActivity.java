@@ -147,9 +147,9 @@ public class MainActivity extends AppCompatActivity {
                     throw new Exception();
                 }
 
-              File selectedFile = new File(selectedFilePath);
 
-              androidWebServer = new AndroidWebServer(port, context, selectedFile);
+
+              androidWebServer = new AndroidWebServer(port, context, selectedFilePath);
               androidWebServer.start();
               //dialog.dismiss();
                 return true;
