@@ -65,6 +65,13 @@
                 android:textColor="@android:color/white"
                 android:textSize="18sp"
                 android:visibility="invisible" />
+          <Button
+              android:id="@+id/attachment_button"
+              android:layout_width="wrap_content"
+              android:layout_height="wrap_content"
+              android:layout_marginTop="50dp"
+              android:text="Attachment"
+              />
 
         </LinearLayout>
 

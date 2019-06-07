@@ -1,6 +1,11 @@
 package com.mikhaellopez.androidwebserver;
 
+import android.app.Activity;
 import android.content.Context;
+import android.content.Intent;
+import android.util.Log;
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Map;
@@ -12,9 +17,14 @@ import fi.iki.elonen.NanoHTTPD;
  */
 public class AndroidWebServer extends NanoHTTPD {
 private Context context;
-    public AndroidWebServer(int port, Context context) {
+private static final int PICK_FILE_REQUEST = 1;
+  File selectedFile;
+
+    public AndroidWebServer(int port, Context context, File selectedFile ) {
         super(port);
         this.context=context;
+        this.selectedFile=selectedFile;
+
     }
 
     public AndroidWebServer(String hostname, int port) {
@@ -23,27 +33,20 @@ private Context context;
 
     @Override
     public Response serve(IHTTPSession session) {
-        //String msg = "<html><body><h1>Hello server</h1>\n";
-        //Map<String, String> parms = session.getParms();
-        //if (parms.get("username") == null) {
-        //    msg += "<form action='?' method='get'>\n  <p>Your name: <input type='text' name='username'></p>\n" + "</form>\n";
-        //} else {
-        //    msg += "<p>Hello, " + parms.get("username") + "!</p>";
-        //}
-        //return newFixedLengthResponse( msg + "</body></html>\n" );
-
-      InputStream myInput = null;
+      //InputStream myInput = null;
+      FileInputStream fileInputStream=null;
       try {
-        myInput = context.getAssets().open("sound.mp3");
+        fileInputStream = new FileInputStream(selectedFile);
       } catch (IOException e) {
         e.printStackTrace();
       }
-      return createResponse(Response.Status.OK, "audio/mpeg", myInput);
+
+      return createResponse(Response.Status.OK, "audio/mpeg", fileInputStream);
     }
 
   //Announce that the file server accepts partial content requests
   private Response createResponse(Response.Status status, String mimeType,
-      InputStream message) {
+      FileInputStream message) {
     return newChunkedResponse(status, mimeType, message);
   }
 

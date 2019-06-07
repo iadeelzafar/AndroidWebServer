@@ -1,25 +1,37 @@
 package com.mikhaellopez.androidwebserver;
 
+import android.Manifest;
+import android.annotation.SuppressLint;
+import android.app.Activity;
 import android.app.AlertDialog;
+import android.app.ProgressDialog;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.pm.PackageManager;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
+import android.net.Uri;
 import android.net.wifi.WifiManager;
 import android.os.Bundle;
+import android.os.PowerManager;
 import android.support.design.widget.CoordinatorLayout;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
+import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
+import android.util.Log;
 import android.view.KeyEvent;
 import android.view.View;
+import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
+import java.io.File;
+import java.io.IOException;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.net.SocketException;
@@ -31,11 +43,13 @@ import java.util.Enumeration;
 public class MainActivity extends AppCompatActivity {
 
     private static final int DEFAULT_PORT = 8080;
+  private static final int MY_PERMISSIONS_REQUEST_WRITE_EXTERNAL_STORAGE =65 ;
 
-    // INSTANCE OF ANDROID WEB SERVER
+  // INSTANCE OF ANDROID WEB SERVER
     private AndroidWebServer androidWebServer;
     private BroadcastReceiver broadcastReceiverNetworkState;
     private static boolean isStarted = false;
+    private Context context=this;
 
     // VIEW
     private CoordinatorLayout coordinatorLayout;
@@ -44,7 +58,16 @@ public class MainActivity extends AppCompatActivity {
     private View textViewMessage;
     private TextView textViewIpAccess;
 
-    @Override
+
+  private static final int PICK_FILE_REQUEST = 1;
+  PowerManager.WakeLock wakeLock;
+  private String selectedFilePath;
+  private int port;
+
+  Button attachmentButton;
+
+
+  @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
@@ -55,13 +78,24 @@ public class MainActivity extends AppCompatActivity {
         textViewMessage = findViewById(R.id.textViewMessage);
         textViewIpAccess = (TextView) findViewById(R.id.textViewIpAccess);
         setIpAccess();
-      //Toast.makeText(this,getIpAddress(),Toast.LENGTH_LONG).show();
+
+        attachmentButton = (Button) findViewById(R.id.attachment_button);
+
+        checkWriteExternalStoragePermission();
+
+        attachmentButton.setOnClickListener(new View.OnClickListener() {
+          @Override public void onClick(View view) {
+            showFileChooser();
+          }
+        });
+
         floatingActionButtonOnOff = (FloatingActionButton) findViewById(R.id.floatingActionButtonOnOff);
         floatingActionButtonOnOff.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 //if (isConnectedInWifi()) {
                     if (!isStarted && startAndroidWebServer()) {
+                      Log.v("DANG","Coming 13");
                         isStarted = true;
                         textViewMessage.setVisibility(View.VISIBLE);
                         floatingActionButtonOnOff.setBackgroundTintList(ContextCompat.getColorStateList(MainActivity.this, R.color.colorGreen));
@@ -83,16 +117,41 @@ public class MainActivity extends AppCompatActivity {
         initBroadcastReceiverNetworkStateChanged();
     }
 
-    //region Start And Stop AndroidWebServer
+  private void checkWriteExternalStoragePermission() {
+    // Here, thisActivity is the current activity
+    if (ContextCompat.checkSelfPermission(this,
+        Manifest.permission.WRITE_EXTERNAL_STORAGE)
+        != PackageManager.PERMISSION_GRANTED) {
+
+        // No explanation needed; request the permission
+        ActivityCompat.requestPermissions(this,
+            new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE},
+            MY_PERMISSIONS_REQUEST_WRITE_EXTERNAL_STORAGE);
+
+        // MY_PERMISSIONS_REQUEST_READ_CONTACTS is an
+        // app-defined int constant. The callback method gets the
+        // result of the request.
+      }
+    else {
+      // Permission has already been granted
+    }
+    }
+
+
+  //region Start And Stop AndroidWebServer
     private boolean startAndroidWebServer() {
         if (!isStarted) {
-            int port = getPortFromEditText();
+            port = getPortFromEditText();
             try {
                 if (port == 0) {
                     throw new Exception();
                 }
-                androidWebServer = new AndroidWebServer(port,this);
-                androidWebServer.start();
+
+              File selectedFile = new File(selectedFilePath);
+
+              androidWebServer = new AndroidWebServer(port, context, selectedFile);
+              androidWebServer.start();
+              //dialog.dismiss();
                 return true;
             } catch (Exception e) {
                 e.printStackTrace();
@@ -101,6 +160,18 @@ public class MainActivity extends AppCompatActivity {
         }
         return false;
     }
+
+    //chooses file
+  private void showFileChooser() {
+    Log.v("DANG","Coming 7");
+    Intent intent = new Intent();
+    //sets the select file to all types of files
+    intent.setType("file/*");
+    //allows to select data and return it
+    intent.setAction(Intent.ACTION_GET_CONTENT);
+    //starts new activity to select file and return data
+    startActivityForResult(Intent.createChooser(intent, "Choose File to Upload.."), PICK_FILE_REQUEST);
+  }
 
     private boolean stopAndroidWebServer() {
         if (isStarted && androidWebServer != null) {
@@ -203,6 +274,8 @@ public class MainActivity extends AppCompatActivity {
         }
       }
 
+
+
     } catch (SocketException e) {
       // TODO Auto-generated catch block
       e.printStackTrace();
@@ -210,6 +283,35 @@ public class MainActivity extends AppCompatActivity {
     }
     return "http://" + ip + ":";
 
+  }
+
+  //@SuppressLint("InvalidWakeLockTag")
+  @Override
+  protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+    super.onActivityResult(requestCode, resultCode, data);
+    if (resultCode == Activity.RESULT_OK) {
+      if (requestCode == PICK_FILE_REQUEST) {
+        if (data == null) {
+          //no data present
+          return;
+        }
+
+        //PowerManager powerManager = (PowerManager) getSystemService(POWER_SERVICE);
+        //wakeLock = powerManager.newWakeLock(PowerManager.SCREEN_BRIGHT_WAKE_LOCK, "DANG");
+        //wakeLock.acquire();
+
+        Uri selectedFileUri = data.getData();
+        selectedFilePath = FilePath.getPath(this, selectedFileUri);
+        Log.i("DANG", "Selected File Path:" + selectedFilePath);
+
+        if (selectedFilePath != null && !selectedFilePath.equals("")) {
+          //tvFileName.setText(selectedFilePath);
+          Toast.makeText(this,selectedFilePath,Toast.LENGTH_LONG).show();
+        } else {
+          Toast.makeText(this, "Cannot upload file to server", Toast.LENGTH_SHORT).show();
+        }
+      }
+    }
   }
 
 }
